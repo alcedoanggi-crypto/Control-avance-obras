@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Cronograma{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h2 class="seccion-titulo mb-0"><i class="bi bi-kanban"></i> Cronograma &mdash; {{ proyecto.nombre }}</h2>
+  <div class="btn-group btn-group-sm" role="group">
+    <button type="button" class="btn btn-outline-naranja" data-vista="Day">Día</button>
+    <button type="button" class="btn btn-naranja" data-vista="Week">Semana</button>
+    <button type="button" class="btn btn-outline-naranja" data-vista="Month">Mes</button>
+  </div>
+</div>
+<p class="text-muted small gantt-leyenda">
+  <span class="semaforo rojo"></span>0&ndash;39% avance
+  &nbsp;&nbsp;<span class="semaforo amarillo"></span>40&ndash;79% avance
+  &nbsp;&nbsp;<span class="semaforo verde"></span>80&ndash;100% avance
+</p>
+<div class="card">
+  <div class="card-body">
+    <div id="gantt"></div>
+    <p id="ganttVacio" class="text-muted text-center py-5" hidden>
+      Ninguna partida tiene fechas planificadas todavía. Edita una partida y completa
+      "Fecha inicio planificada" y "Fecha fin planificada" (sección Cronograma del formulario)
+      para que aparezca aquí.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+<script>
+(async () => {
+  const resp = await fetch("{{ url_for('cronograma.tareas') }}");
+  const tareas = await resp.json();
+  if (!tareas.length) {
+    document.getElementById('ganttVacio').hidden = false;
+    return;
+  }
+  const gantt = new Gantt("#gantt", tareas, {
+    view_mode: "Week",
+    custom_popup_html: (task) => `
+      <div class="p-2">
+        <strong>${task.name}</strong><br>
+        Avance: ${task.progress}%<br>
+        ${task._start.toLocaleDateString()} &rarr; ${task._end.toLocaleDateString()}
+      </div>`,
+  });
+  document.querySelectorAll('[data-vista]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-vista]').forEach((b) => {
+        b.classList.remove('btn-naranja');
+        b.classList.add('btn-outline-naranja');
+      });
+      btn.classList.remove('btn-outline-naranja');
+      btn.classList.add('btn-naranja');
+      gantt.change_view_mode(btn.dataset.vista);
+    });
+  });
+})();
+</script>
+{% endblock %}

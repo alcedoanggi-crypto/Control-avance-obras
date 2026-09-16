@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Actualizar avance{% endblock %}
+{% block content %}
+<h2 class="seccion-titulo"><i class="bi bi-clipboard-check"></i> Actualizar avance &mdash; {{ proyecto.nombre }}</h2>
+<p class="text-muted">Ingresa la cantidad ejecutada a la fecha para cada partida. Puedes adjuntar una foto como evidencia.</p>
+
+{% for d in proyecto.disciplinas %}
+<div class="card mb-4">
+  <div class="card-header">{{ d.nombre }}</div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th><th>Descripción</th><th>Unidad</th><th>Cant. Presup.</th><th>Cronograma plan.</th>
+          <th style="min-width: 320px;">Actualizar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in d.partidas %}
+        <tr>
+          <td>{{ p.numero_partida }}</td>
+          <td>{{ p.descripcion }}</td>
+          <td>{{ p.unidad }}</td>
+          <td>{{ p.cantidad_presupuestada }}</td>
+          <td class="small text-muted">
+            {% if p.fecha_inicio_plan and p.fecha_fin_plan %}
+              {{ p.fecha_inicio_plan.strftime('%d/%m') }} &ndash; {{ p.fecha_fin_plan.strftime('%d/%m/%Y') }}
+            {% else %}
+              <span class="fst-italic">sin definir</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('avance.actualizar', partida_id=p.id) }}"
+                  enctype="multipart/form-data" class="d-flex gap-2 align-items-start flex-wrap">
+              {{ form.hidden_tag() }}
+              {{ form.cantidad_ejecutada(class_="form-control form-control-sm", style="width:110px;", value=p.cantidad_ejecutada) }}
+              {{ form.fecha_corte(class_="form-control form-control-sm", style="width:150px;", value=proyecto.fecha_corte) }}
+              {{ form.evidencia(class_="form-control form-control-sm", style="width:180px;") }}
+              <button class="btn btn-sm btn-naranja"><i class="bi bi-save"></i> Guardar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<p class="text-muted">Esta obra aún no tiene disciplinas ni partidas configuradas.</p>
+{% endfor %}
+{% endblock %}

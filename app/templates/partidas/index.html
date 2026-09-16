@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% block title %}Partidas &mdash; {{ disciplina.nombre }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h2 class="seccion-titulo mb-0"><i class="bi bi-list-ul"></i> {{ disciplina.nombre }}</h2>
+    <p class="text-muted mb-0">{{ disciplina.proyecto.nombre }}</p>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('proyectos.detalle', proyecto_id=disciplina.proyecto_id) }}"><i class="bi bi-arrow-left"></i> Volver</a>
+    <a class="btn btn-outline-naranja" href="{{ url_for('partidas.pdf', disciplina_id=disciplina.id) }}"><i class="bi bi-file-earmark-pdf"></i> Generar PDF</a>
+    <button type="button" class="btn btn-naranja" data-url="{{ url_for('partidas.nueva', disciplina_id=disciplina.id) }}" onclick="abrirNueva(this)"><i class="bi bi-plus-lg"></i> Nueva partida</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th rowspan="2">#</th><th rowspan="2">Descripción</th><th rowspan="2">Unidad</th>
+          <th rowspan="2">Cant. Presup.</th><th rowspan="2">P.U. ($)</th>
+          <th rowspan="2">Total Presup. ($)</th><th rowspan="2">% Avance</th>
+          <th colspan="2" class="text-center grupo-valuacion">Valuación</th>
+          <th colspan="3" class="text-center grupo-empresa">Costo empresa</th>
+          <th rowspan="2"></th>
+        </tr>
+        <tr>
+          <th class="text-center grupo-valuacion">Total</th>
+          <th class="text-center grupo-valuacion">Pendiente</th>
+          <th class="text-center grupo-empresa">Gastado</th>
+          <th class="text-center grupo-empresa">Resta por gastar</th>
+          <th class="text-center grupo-empresa">Utilidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in disciplina.partidas %}
+        <tr>
+          <td>{{ p.numero_partida }}</td>
+          <td>{{ p.descripcion }}</td>
+          <td>{{ p.unidad }}</td>
+          <td>{{ p.cantidad_presupuestada }}</td>
+          <td>{{ p.precio_unitario | moneda }}</td>
+          <td>{{ p.total_presupuestado | moneda }}</td>
+          <td><span class="semaforo {{ p.semaforo }}"></span>{{ p.porcentaje_avance | porcentaje }} {% if p.sobre_ejecutada %}<span class="badge badge-sobre-ejecucion">!</span>{% endif %}</td>
+          <td class="grupo-valuacion">{{ p.valuacion_total | moneda }}</td>
+          <td class="grupo-valuacion">{{ p.valuacion_pendiente | moneda }}</td>
+          <td class="grupo-empresa">{{ p.gastado_empresa | moneda }}</td>
+          <td class="grupo-empresa">{{ p.resta_por_gastar_empresa | moneda }}</td>
+          <td class="grupo-empresa">{{ p.utilidad_empresa | moneda }}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-naranja" onclick="abrirEditar(this)"
+                    data-url="{{ url_for('partidas.editar', partida_id=p.id) }}"
+                    data-numero="{{ p.numero_partida }}"
+                    data-descripcion="{{ p.descripcion }}"
+                    data-unidad="{{ p.unidad }}"
+                    data-cantidad="{{ p.cantidad_presupuestada }}"
+                    data-precio="{{ p.precio_unitario }}"
+                    data-inicio="{{ p.fecha_inicio_plan.isoformat() if p.fecha_inicio_plan else '' }}"
+                    data-fin="{{ p.fecha_fin_plan.isoformat() if p.fecha_fin_plan else '' }}"
+                    data-avance="{{ (p.porcentaje_avance * 100) | round(2) }}"
+                    data-avance-empresa="{{ p.avance_costo_empresa }}">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <form method="post" action="{{ url_for('partidas.eliminar', partida_id=p.id) }}" class="d-inline"
+                  onsubmit="return confirm('¿Eliminar esta partida?');">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="13" class="text-center text-muted py-4">No hay partidas en esta disciplina.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if disciplina.partidas %}
+      <tfoot>
+        <tr class="fw-bold">
+          <td colspan="5" class="text-end">Subtotal</td>
+          <td>{{ disciplina.subtotal_presupuestado | moneda }}</td>
+          <td></td>
+          <td class="grupo-valuacion"></td>
+          <td class="grupo-valuacion"></td>
+          <td class="grupo-empresa"></td>
+          <td class="grupo-empresa"></td>
+          <td class="grupo-empresa"></td>
+          <td></td>
+        </tr>
+        {% if disciplina.aplica_iva %}
+        <tr><td colspan="5" class="text-end">IVA ({{ disciplina.iva_porcentaje }}%)</td><td>{{ disciplina.iva_monto | moneda }}</td><td colspan="7"></td></tr>
+        <tr class="fw-bold"><td colspan="5" class="text-end">Total con IVA</td><td>{{ disciplina.total_con_iva | moneda }}</td><td colspan="7"></td></tr>
+        {% endif %}
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<!-- Modal compartido: crear y editar partida (seccion 3.1: el bloque de calculo es
+     siempre de solo lectura, nunca se envia al servidor -- el backend recalcula todo). -->
+<div class="modal fade" id="modalPartida" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="formPartida" method="post">
+        {{ csrf_form.hidden_tag() }}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalPartidaTitulo"><i class="bi bi-card-list"></i> Nueva partida</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">N&deg; Partida: <strong id="mNumero">Automático</strong></p>
+
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea name="descripcion" class="form-control" rows="2" required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Unidad</label>
+              <input type="text" name="unidad" class="form-control" required>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Cantidad</label>
+              <input type="text" inputmode="decimal" name="cantidad_presupuestada" class="form-control" required>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Precio unitario ($)</label>
+              <input type="text" inputmode="decimal" name="precio_unitario" class="form-control" placeholder="Ej: 3,5" required>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Total <span class="text-muted small">(Cantidad &times; P.U.)</span></label>
+              <input type="text" class="form-control" id="calcTotal" value="$ 0.00" disabled readonly>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">% Avance (porcentaje)</label>
+            <div class="d-flex align-items-center gap-2">
+              <input type="range" min="0" max="150" step="0.1" value="0" id="mAvanceSlider" class="form-range">
+              <div class="input-group input-group-sm" style="max-width:110px;">
+                <input type="number" min="0" max="999" step="0.1" value="0" id="mAvanceNumero" class="form-control text-end">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <input type="hidden" name="cantidad_ejecutada" id="mCantidadEjecutada" value="0">
+            <span id="mCantidadEjecutadaTexto" class="d-none">0</span>
+            <span id="mCantidadTotalTexto" class="d-none">0</span>
+          </div>
+
+          <p class="text-muted small mb-2"><i class="bi bi-calendar-range"></i> Cronograma planificado (diagrama de Gantt)</p>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Fecha inicio planificada</label>
+              <input type="date" name="fecha_inicio_plan" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Fecha fin planificada</label>
+              <input type="date" name="fecha_fin_plan" class="form-control">
+            </div>
+          </div>
+
+          <hr>
+          <p class="fw-bold mb-1">Cálculo automático</p>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr>
+                  <td class="grupo-valuacion">Total valuado <span class="text-muted small d-block">(2) = (1) &times; Avance%</span></td>
+                  <td class="grupo-valuacion text-end" id="calcValuacionTotal">$ 0.00</td>
+                </tr>
+                <tr>
+                  <td class="grupo-valuacion">Pendiente por ejecutar <span class="text-muted small d-block">(3) = Total (1) &minus; Total valuado (2)</span></td>
+                  <td class="grupo-valuacion text-end" id="calcValuacionPendiente">$ 0.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr>
+          <p class="fw-bold mb-1">Costo empresa</p>
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label class="form-label">Avance costo empresa (%) <span class="text-muted small">(manual, ej: 30 o 100)</span></label>
+              <input type="text" inputmode="decimal" name="avance_costo_empresa" class="form-control" placeholder="0" id="mAvanceEmpresa">
+            </div>
+            <div class="col-md-6 mb-2">
+              <label class="form-label">Costo</label>
+              <input type="text" class="form-control" id="calcCostoEmpresaInline" value="$ 0.00" disabled readonly>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr>
+                  <td class="grupo-valuacion">Gastado <span class="text-muted small d-block">Costo &times; Avance costo empresa%</span></td>
+                  <td class="grupo-valuacion text-end" id="calcGastadoEmpresa">$ 0.00</td>
+                </tr>
+                <tr>
+                  <td class="grupo-valuacion">Resta por gastar</td>
+                  <td class="grupo-valuacion text-end" id="calcRestaEmpresa">$ 0.00</td>
+                </tr>
+                <tr>
+                  <td class="grupo-valuacion">Utilidad <span class="text-muted small d-block">Total &minus; Gastado</span></td>
+                  <td class="grupo-valuacion text-end" id="calcUtilidadEmpresa">$ 0.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-naranja"><i class="bi bi-check-lg"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.getElementById('formPartida');
+  const modalEl = document.getElementById('modalPartida');
+  const modal = new bootstrap.Modal(modalEl);
+  const campos = {
+    numero: document.getElementById('mNumero'),
+    descripcion: form.querySelector('[name=descripcion]'),
+    unidad: form.querySelector('[name=unidad]'),
+    cantidad: form.querySelector('[name=cantidad_presupuestada]'),
+    precio: form.querySelector('[name=precio_unitario]'),
+    inicio: form.querySelector('[name=fecha_inicio_plan]'),
+    fin: form.querySelector('[name=fecha_fin_plan]'),
+    ejecutada: document.getElementById('mCantidadEjecutada'),
+    avanceEmpresa: document.getElementById('mAvanceEmpresa'),
+  };
+  const avanceSlider = document.getElementById('mAvanceSlider');
+  const avanceNumero = document.getElementById('mAvanceNumero');
+
+  function moneda(valor) {
+    const n = Number.isFinite(valor) ? valor : 0;
+    return '$ ' + n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Acepta coma o punto como separador decimal (3,5 o 3.5) al leer un input.
+  function numero(valor) {
+    if (typeof valor !== 'string') return parseFloat(valor) || 0;
+    return parseFloat(valor.trim().replace(',', '.')) || 0;
+  }
+
+  function avanceActual() {
+    return Math.max(0, numero(avanceNumero.value));
+  }
+
+  // El %Avance manda: de ahi se deriva cantidad_ejecutada (lo que realmente
+  // guarda el modelo). Cantidad presupuestada tambien la mueve, para mantener
+  // la misma cantidad ejecutada en unidades si el usuario ajusta el presupuesto.
+  function sincronizarAvance(origen) {
+    let valor = origen === 'slider' ? parseFloat(avanceSlider.value) : parseFloat(avanceNumero.value);
+    if (isNaN(valor)) valor = 0;
+    valor = Math.max(0, Math.min(valor, 999));
+    avanceSlider.value = Math.min(valor, 150);
+    avanceNumero.value = valor;
+    // Autocompleta "Avance costo empresa" con el %Avance de arriba (el usuario
+    // puede sobrescribirlo despues a mano si el gasto real difiere del avance fisico).
+    campos.avanceEmpresa.value = Math.min(valor, 100);
+    recalcular();
+  }
+
+  function recalcular() {
+    const cantidad = numero(campos.cantidad.value);
+    const precio = numero(campos.precio.value);
+    const avanceFrac = avanceActual() / 100;
+    const total = cantidad * precio;
+    const ejecutada = cantidad * avanceFrac;
+    const valuacionTotal = total * avanceFrac;
+    const valuacionPendiente = total - valuacionTotal;
+
+    campos.ejecutada.value = ejecutada.toFixed(2);
+    document.getElementById('mCantidadEjecutadaTexto').textContent = ejecutada.toLocaleString('es-VE', { maximumFractionDigits: 2 });
+    document.getElementById('mCantidadTotalTexto').textContent = cantidad.toLocaleString('es-VE', { maximumFractionDigits: 2 });
+
+    document.getElementById('calcTotal').value = moneda(total);
+    document.getElementById('calcValuacionTotal').textContent = moneda(valuacionTotal);
+    document.getElementById('calcValuacionPendiente').textContent = moneda(valuacionPendiente);
+
+    // Costo empresa: se autocompleta con el %Avance de arriba, pero el usuario
+    // puede editarlo a mano si el gasto real difiere del avance fisico.
+    const avanceEmpresaFrac = Math.max(0, Math.min(numero(campos.avanceEmpresa.value), 100)) / 100;
+    const costoEmpresa = total;
+    const gastadoEmpresa = costoEmpresa * avanceEmpresaFrac;
+    const restaEmpresa = costoEmpresa - gastadoEmpresa;
+    const utilidadEmpresa = total - gastadoEmpresa;
+
+    document.getElementById('calcCostoEmpresaInline').value = moneda(costoEmpresa);
+    document.getElementById('calcGastadoEmpresa').textContent = moneda(gastadoEmpresa);
+    document.getElementById('calcRestaEmpresa').textContent = moneda(restaEmpresa);
+    document.getElementById('calcUtilidadEmpresa').textContent = moneda(utilidadEmpresa);
+  }
+
+  [campos.cantidad, campos.precio, campos.avanceEmpresa].forEach((el) => el.addEventListener('input', recalcular));
+  avanceSlider.addEventListener('input', () => sincronizarAvance('slider'));
+  avanceNumero.addEventListener('input', () => sincronizarAvance('numero'));
+
+  function limpiarErrores() {
+    form.querySelectorAll('.error-campo').forEach((el) => el.remove());
+    form.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid'));
+  }
+
+  window.abrirNueva = (btn) => {
+    form.reset();
+    limpiarErrores();
+    form.action = btn.dataset.url;
+    campos.numero.textContent = 'Automático';
+    avanceSlider.value = 0;
+    avanceNumero.value = 0;
+    campos.avanceEmpresa.value = 0;
+    document.getElementById('modalPartidaTitulo').innerHTML = '<i class="bi bi-card-list"></i> Nueva partida';
+    recalcular();
+    modal.show();
+  };
+
+  window.abrirEditar = (btn) => {
+    form.reset();
+    limpiarErrores();
+    form.action = btn.dataset.url;
+    campos.numero.textContent = '#' + btn.dataset.numero;
+    campos.descripcion.value = btn.dataset.descripcion;
+    campos.unidad.value = btn.dataset.unidad;
+    campos.cantidad.value = btn.dataset.cantidad;
+    campos.precio.value = btn.dataset.precio;
+    campos.inicio.value = btn.dataset.inicio;
+    campos.fin.value = btn.dataset.fin;
+    const avance = parseFloat(btn.dataset.avance) || 0;
+    avanceSlider.value = Math.min(avance, 150);
+    avanceNumero.value = avance;
+    campos.avanceEmpresa.value = btn.dataset.avanceEmpresa || 0;
+    document.getElementById('modalPartidaTitulo').innerHTML = '<i class="bi bi-card-list"></i> Editar partida';
+    recalcular();
+    modal.show();
+  };
+
+  form.addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    limpiarErrores();
+    const resp = await fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: new FormData(form),
+    });
+    let datos;
+    try {
+      datos = await resp.json();
+    } catch (e) {
+      alert('Ocurrió un error inesperado al guardar. Intenta de nuevo.');
+      return;
+    }
+    if (datos.ok) {
+      window.location.href = datos.redirect;
+      return;
+    }
+    Object.entries(datos.errors || {}).forEach(([nombreCampo, mensajes]) => {
+      const input = form.querySelector(`[name=${nombreCampo}]`);
+      if (!input) return;
+      input.classList.add('is-invalid');
+      const div = document.createElement('div');
+      div.className = 'text-danger small error-campo';
+      div.textContent = mensajes.join(' ');
+      input.insertAdjacentElement('afterend', div);
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% from 'partials/_form_field.html' import campo %}
+{% block title %}{{ 'Editar' if usuario else 'Nuevo' }} usuario{% endblock %}
+{% block content %}
+<h2 class="seccion-titulo"><i class="bi bi-person-plus"></i> {{ 'Editar' if usuario else 'Nuevo' }} usuario</h2>
+<div class="card" style="max-width: 560px;">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="row">
+        <div class="col-md-6">{{ campo(form.nombre) }}</div>
+        <div class="col-md-6">{{ campo(form.apellido) }}</div>
+      </div>
+      {{ campo(form.email) }}
+      {{ campo(form.rol) }}
+      {{ campo(form.proyectos, size=5) }}
+      {{ campo(form.activo) }}
+      {{ campo(form.password) }}
+      <button type="submit" class="btn btn-naranja"><i class="bi bi-check-lg"></i> Guardar</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('usuarios.index') }}">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

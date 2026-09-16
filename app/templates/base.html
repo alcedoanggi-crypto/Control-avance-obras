@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Control de Avance{% endblock %} &middot; Obra</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/theme.css') }}" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body {% block body_attrs %}{% endblock %}>
+{% if current_user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-obra navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">
+      <i class="bi bi-cone-striped"></i> Control de Avance de Obra
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.blueprint == 'dashboard' }}" href="{{ url_for('dashboard.index') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+        {% if current_user.es_admin %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.blueprint == 'proyectos' }}" href="{{ url_for('proyectos.index') }}"><i class="bi bi-building"></i> Proyectos y disciplinas</a></li>
+        {% endif %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.blueprint == 'cronograma' }}" href="{{ url_for('cronograma.index') }}"><i class="bi bi-kanban"></i> Cronograma</a></li>
+        {% if current_user.es_admin or current_user.es_supervisor %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.blueprint == 'avance' }}" href="{{ url_for('avance.index') }}"><i class="bi bi-clipboard-check"></i> Actualizar avance</a></li>
+        {% endif %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'avance.historial' }}" href="{{ url_for('avance.historial') }}"><i class="bi bi-clock-history"></i> Historial de cortes</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.blueprint == 'reportes' }}" href="{{ url_for('reportes.index') }}"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a></li>
+        {% if current_user.es_admin %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {{ 'active' if request.blueprint in ('partidas', 'usuarios') }}" data-bs-toggle="dropdown" href="#"><i class="bi bi-gear"></i> Administración</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('usuarios.index') }}">Usuarios</a></li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav align-items-lg-center">
+        {% if proyectos_accesibles|length > 1 %}
+        <li class="nav-item dropdown me-2">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-building"></i> {{ proyecto_actual.nombre if proyecto_actual else "Seleccionar obra" }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% for p in proyectos_accesibles %}
+            <li><a class="dropdown-item {{ 'active' if proyecto_actual and p.id == proyecto_actual.id }}"
+                   href="{{ url_for('dashboard.seleccionar_proyecto', proyecto_id=p.id) }}">{{ p.nombre }}</a></li>
+            {% endfor %}
+          </ul>
+        </li>
+        {% endif %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
+            <i class="bi bi-person-circle"></i> {{ current_user.nombre }}
+            <span class="badge badge-naranja">{{ current_user.rol_etiqueta }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text small text-muted">{{ current_user.email }}</span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<main class="{% block main_class %}container py-4{% endblock %}">
+  {% include 'partials/_flash.html' %}
+  {% block content %}{% endblock %}
+</main>
+
+{% if current_user.is_authenticated %}
+<footer class="pie">
+  <small>Sistema de Control de Avance de Obra &middot; Patrón MVC &middot; Flask + PostgreSQL</small>
+</footer>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

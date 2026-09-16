@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% from 'partials/_form_field.html' import campo %}
+{% block title %}{{ 'Editar' if disciplina else 'Nueva' }} disciplina{% endblock %}
+{% block content %}
+<h2 class="seccion-titulo"><i class="bi bi-diagram-3"></i> {{ 'Editar' if disciplina else 'Nueva' }} disciplina &mdash; {{ proyecto.nombre }}</h2>
+<div class="card" style="max-width: 560px;">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ campo(form.nombre) }}
+      {{ campo(form.orden) }}
+      {{ campo(form.aplica_iva) }}
+      {{ campo(form.iva_porcentaje) }}
+      <button type="submit" class="btn btn-naranja"><i class="bi bi-check-lg"></i> Guardar</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('proyectos.detalle', proyecto_id=proyecto.id) }}">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

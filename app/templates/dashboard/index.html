@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block body_attrs %}data-graficos-url="{{ url_for('dashboard.graficos') }}" data-avance-financiero="{{ kpis.avance_financiero }}"{% endblock %}
+
+{% block content %}
+<h2 class="seccion-titulo"><i class="bi bi-speedometer2"></i> {{ proyecto.nombre }}</h2>
+<p class="text-muted">Fecha de corte: <strong>{{ proyecto.fecha_corte.strftime('%d/%m/%Y') }}</strong>
+  &middot; Inicio: {{ proyecto.fecha_inicio.strftime('%d/%m/%Y') }}
+  {% if proyecto.fecha_fin_estimada %} &middot; Fin estimado: {{ proyecto.fecha_fin_estimada.strftime('%d/%m/%Y') }}{% endif %}
+</p>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card h-100 p-3 text-center">
+      <div class="kpi-icon"><i class="bi bi-cash-stack"></i></div>
+      {% if not ocultar_precios %}
+      <div class="kpi-valor">{{ kpis.monto_total | moneda }}</div>
+      {% else %}
+      <div class="kpi-valor">&mdash;</div>
+      {% endif %}
+      <div class="kpi-label">Presupuesto total (c/IVA)</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card h-100 p-3 text-center">
+      <div class="kpi-icon"><i class="bi bi-check2-circle"></i></div>
+      {% if not ocultar_precios %}
+      <div class="kpi-valor">{{ kpis.monto_ejecutado | moneda }}</div>
+      {% else %}
+      <div class="kpi-valor">&mdash;</div>
+      {% endif %}
+      <div class="kpi-label">Monto ejecutado</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card h-100 p-3 text-center">
+      <div class="kpi-icon"><i class="bi bi-calendar-range"></i></div>
+      <div class="kpi-valor">{{ kpis.dias_transcurridos }}</div>
+      <div class="kpi-label">Días transcurridos</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card h-100 p-3 text-center {{ 'alerta' if kpis.sobre_ejecutadas > 0 }}">
+      <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="kpi-valor">{{ kpis.sobre_ejecutadas }}</div>
+      <div class="kpi-label">Partidas sobre-ejecutadas</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-speedometer"></i> % Avance financiero general</div>
+      <div class="card-body">
+        <div class="gauge-wrap">
+          <canvas id="chartGauge" height="220"></canvas>
+          <div class="gauge-texto">
+            <span class="valor">{{ kpis.avance_financiero | round(1) }}%</span>
+            <span class="etiqueta">Avance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-bar-chart"></i> Avance por disciplina: presupuestado vs. ejecutado</div>
+      <div class="card-body"><canvas id="chartAvanceDisciplina" height="180"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart"></i> Distribución del presupuesto por disciplina</div>
+      <div class="card-body"><canvas id="chartPesoDisciplina" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-graph-up-arrow"></i> Curva S &mdash; avance acumulado planificado vs. real</div>
+      <div class="card-body"><canvas id="chartCurvaS" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-bar-chart-steps"></i> Top 10 partidas por peso ponderado &mdash; % de avance individual</div>
+      <div class="card-body"><canvas id="chartTopPartidas" height="260"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header text-danger"><i class="bi bi-exclamation-octagon"></i> Sobre-ejecución (posible cambio de alcance)</div>
+      <ul class="list-group list-group-flush">
+        {% for p in sobre_ejecutadas %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ p.numero_partida }}. {{ p.descripcion }}</span>
+          <span class="badge badge-sobre-ejecucion">{{ p.porcentaje_avance | porcentaje }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">Sin sobre-ejecuciones.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header text-warning"><i class="bi bi-bell"></i> Sin actualizar hace tiempo</div>
+      <ul class="list-group list-group-flush">
+        {% for p in sin_actualizar %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ p.numero_partida }}. {{ p.descripcion }}</span>
+          <span class="badge bg-warning text-dark">{{ p.dias_sin_actualizar }} días</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">Todas las partidas se han actualizado recientemente.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla detallada filtrable -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-table"></i> Detalle de partidas</span>
+    <div class="d-flex gap-2">
+      <select id="filtroDisciplina" class="form-select form-select-sm">
+        <option value="">Todas las disciplinas</option>
+        {% for d in proyecto.disciplinas %}
+        <option value="{{ d.id }}">{{ d.nombre }}</option>
+        {% endfor %}
+      </select>
+      <input id="filtroTexto" class="form-control form-control-sm" placeholder="Buscar descripción...">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0" id="tablaPartidas">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descripción</th>
+          <th>Disciplina</th>
+          <th>Unidad</th>
+          <th>Cant. Presup.</th>
+          <th>Cant. Ejecutada</th>
+          {% if not ocultar_precios %}<th>Peso %</th>{% endif %}
+          <th>% Avance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in proyecto.disciplinas %}
+          {% for p in d.partidas %}
+          <tr data-disciplina="{{ d.id }}" data-texto="{{ p.descripcion|lower }}">
+            <td>{{ p.numero_partida }}</td>
+            <td>{{ p.descripcion }}</td>
+            <td>{{ d.nombre }}</td>
+            <td>{{ p.unidad }}</td>
+            <td>{{ p.cantidad_presupuestada }}</td>
+            <td>
+              {{ p.cantidad_ejecutada }}
+              {% if p.sobre_ejecutada %}<span class="badge badge-sobre-ejecucion ms-1">sobre-ejecutada</span>{% endif %}
+            </td>
+            {% if not ocultar_precios %}<td>{{ p.peso_ponderado | porcentaje }}</td>{% endif %}
+            <td><span class="semaforo {{ p.semaforo }}"></span>{{ p.porcentaje_avance | porcentaje }}</td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+  document.getElementById('filtroDisciplina').addEventListener('change', filtrarTabla);
+  document.getElementById('filtroTexto').addEventListener('input', filtrarTabla);
+  function filtrarTabla() {
+    const disciplina = document.getElementById('filtroDisciplina').value;
+    const texto = document.getElementById('filtroTexto').value.toLowerCase();
+    document.querySelectorAll('#tablaPartidas tbody tr').forEach((fila) => {
+      const coincideDisciplina = !disciplina || fila.dataset.disciplina === disciplina;
+      const coincideTexto = !texto || fila.dataset.texto.includes(texto);
+      fila.style.display = (coincideDisciplina && coincideTexto) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

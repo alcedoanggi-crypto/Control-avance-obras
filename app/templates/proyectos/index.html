@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Proyectos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="seccion-titulo mb-0"><i class="bi bi-building"></i> Proyectos (obras)</h2>
+  <a class="btn btn-naranja" href="{{ url_for('proyectos.nuevo') }}"><i class="bi bi-plus-lg"></i> Nuevo proyecto</a>
+</div>
+
+<div class="card">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Inicio</th>
+        <th>Fin estimado</th>
+        <th>Corte actual</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in proyectos %}
+      <tr>
+        <td><a href="{{ url_for('proyectos.detalle', proyecto_id=p.id) }}">{{ p.nombre }}</a></td>
+        <td>{{ p.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+        <td>{{ p.fecha_fin_estimada.strftime('%d/%m/%Y') if p.fecha_fin_estimada else '-' }}</td>
+        <td>{{ p.fecha_corte.strftime('%d/%m/%Y') }}</td>
+        <td>{% if p.activo %}<span class="badge bg-success">Activo</span>{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-naranja" href="{{ url_for('proyectos.editar', proyecto_id=p.id) }}"><i class="bi bi-pencil"></i></a>
+          <form method="post" action="{{ url_for('proyectos.eliminar', proyecto_id=p.id) }}" class="d-inline"
+                onsubmit="return confirm('¿Eliminar el proyecto y todos sus datos?');">
+            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No hay proyectos registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

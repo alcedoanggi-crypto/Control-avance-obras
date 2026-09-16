@@ -1,0 +1,15 @@
+{% macro campo(field) %}
+<div class="mb-3">
+  {{ field.label(class_="form-label") }}
+  {% if field.type == "BooleanField" %}
+    <div class="form-check">
+      {{ field(class_="form-check-input") }}
+    </div>
+  {% else %}
+    {{ field(class_="form-select" if field.type in ("SelectField", "SelectMultipleField") else "form-control", **kwargs) }}
+  {% endif %}
+  {% for error in field.errors %}
+    <div class="text-danger small">{{ error }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}

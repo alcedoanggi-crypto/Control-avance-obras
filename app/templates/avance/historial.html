@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Historial de cortes{% endblock %}
+{% block content %}
+<h2 class="seccion-titulo"><i class="bi bi-clock-history"></i> Historial de cortes &mdash; {{ proyecto.nombre }}</h2>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Fecha de corte</th><th>Partida</th><th>Cantidad ejecutada</th>
+          <th>Monto ejecutado</th><th>Actualizado por</th><th>Registrado</th><th>Evidencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in registros %}
+        <tr>
+          <td>{{ h.fecha_corte.strftime('%d/%m/%Y') }}</td>
+          <td>{{ h.partida.numero_partida }}. {{ h.partida.descripcion }}</td>
+          <td>{{ h.cantidad_ejecutada }} {{ h.partida.unidad }}</td>
+          <td>{{ h.monto_ejecutado | moneda }}</td>
+          <td>{{ h.usuario.nombre_completo }}</td>
+          <td>{{ h.creado_en.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>
+            {% if h.evidencia_url %}
+            <a href="{{ url_for('static', filename=h.evidencia_url) }}" target="_blank"><i class="bi bi-image"></i> Ver</a>
+            {% else %}<span class="text-muted">&mdash;</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aún no hay actualizaciones registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

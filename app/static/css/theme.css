@@ -1,0 +1,210 @@
+/* =========================================================
+   Control de Avance de Obra - Paleta industrial (naranja/grafito)
+   ========================================================= */
+:root {
+  --naranja: #C2410C;
+  --naranja-claro: #EA580C;
+  --grafito: #1F2937;
+  --grafito-claro: #334155;
+  --gris-concreto: #94A3B8;
+  --gris-fondo: #F1F5F9;
+  --amarillo-atencion: #F59E0B;
+  --verde-avance: #15803D;
+  --rojo-alerta: #DC2626;
+  --texto: #1E293B;
+  --sombra: 0 4px 18px rgba(31, 41, 55, .15);
+
+  --bs-primary: var(--naranja);
+  --bs-primary-rgb: 194, 65, 12;
+}
+
+body {
+  background: var(--gris-fondo);
+  color: var(--texto);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- Navbar ---------- */
+.navbar-obra {
+  background: linear-gradient(90deg, var(--grafito), var(--grafito-claro));
+  box-shadow: var(--sombra);
+  border-bottom: 3px solid var(--naranja);
+}
+.navbar-obra .navbar-brand,
+.navbar-obra .nav-link { color: #E2E8F0 !important; letter-spacing: .2px; }
+.navbar-obra .nav-link:hover { color: var(--naranja-claro) !important; }
+.navbar-obra .nav-link.active {
+  color: #fff !important;
+  border-bottom: 2px solid var(--naranja);
+}
+
+/* ---------- Botones ---------- */
+.btn-naranja { background: var(--naranja); border-color: var(--naranja); color: #fff; }
+.btn-naranja:hover { background: var(--naranja-claro); color: #fff; }
+.btn-grafito { background: var(--grafito); border-color: var(--grafito); color: #fff; }
+.btn-grafito:hover { background: var(--grafito-claro); color: #fff; }
+.btn-outline-naranja { border-color: var(--naranja); color: var(--naranja); }
+.btn-outline-naranja:hover { background: var(--naranja); color: #fff; }
+
+/* ---------- Tarjetas ---------- */
+.card { border: 1px solid rgba(31,41,55,.10); border-radius: .8rem; box-shadow: var(--sombra); }
+.card-header { background: #fff; border-bottom: 2px solid var(--naranja); font-weight: 600; color: var(--grafito); }
+
+.kpi-card {
+  border-left: 6px solid var(--naranja);
+  background: #fff;
+  transition: transform .18s ease;
+}
+.kpi-card:hover { transform: translateY(-4px); }
+.kpi-card .kpi-icon { font-size: 1.9rem; color: var(--naranja); }
+.kpi-card .kpi-valor { font-size: 1.8rem; font-weight: 700; color: var(--grafito); }
+.kpi-card .kpi-label { color: var(--gris-concreto); font-size: .82rem; text-transform: uppercase; letter-spacing: .5px; }
+
+.kpi-card.alerta { border-left-color: var(--rojo-alerta); }
+.kpi-card.alerta .kpi-icon { color: var(--rojo-alerta); }
+
+/* ---------- Gauge central (dona con texto) ---------- */
+.gauge-wrap { position: relative; max-width: 220px; margin: 0 auto; }
+.gauge-texto {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; pointer-events: none;
+}
+.gauge-texto .valor { font-size: 1.8rem; font-weight: 700; color: var(--grafito); }
+.gauge-texto .etiqueta { font-size: .75rem; color: var(--gris-concreto); text-transform: uppercase; }
+
+/* ---------- LOGIN ---------- */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--gris-fondo);
+}
+.login-split {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
+}
+.login-panel {
+  flex: 1 1 420px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 3rem 3.5rem;
+  color: #E2E8F0;
+  background: linear-gradient(150deg, var(--grafito) 0%, var(--grafito-claro) 60%, var(--naranja) 160%);
+  position: relative;
+  overflow: hidden;
+}
+.login-panel::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(245,158,11,.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-panel-emblema { font-size: 2.8rem; color: var(--naranja-claro); }
+.login-panel h1 { font-size: 1.7rem; font-weight: 700; color: #fff; margin: 0; }
+.login-panel-sub { color: #CBD5E1; max-width: 420px; margin: 0; }
+.login-panel-lista { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-direction: column; gap: .6rem; }
+.login-panel-lista li { display: flex; align-items: center; gap: .6rem; color: #E2E8F0; }
+.login-panel-lista li i { color: var(--naranja-claro); font-size: 1.1rem; }
+
+.login-form-wrap {
+  flex: 1 1 380px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+.login-card h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--grafito);
+  margin-bottom: 1.6rem;
+}
+.login-card .input-group-text { background: var(--gris-fondo); color: var(--gris-concreto); border-right: 0; }
+.login-card .input-group .form-control { border-left: 0; }
+.login-card .input-group:focus-within .input-group-text { border-color: var(--naranja); }
+.login-card .input-group:focus-within .form-control { border-color: var(--naranja); box-shadow: none; }
+
+@media (max-width: 767px) {
+  .login-panel { padding: 2.5rem 1.75rem; min-height: 40vh; }
+  .login-form-wrap { min-height: 60vh; }
+}
+
+/* ---------- Semaforo de avance ---------- */
+.semaforo { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .4rem; }
+.semaforo.rojo { background: var(--rojo-alerta); }
+.semaforo.amarillo { background: var(--amarillo-atencion); }
+.semaforo.verde { background: var(--verde-avance); }
+
+.badge-sobre-ejecucion { background: var(--rojo-alerta); color: #fff; }
+.badge-naranja { background: var(--naranja); color: #fff; }
+
+/* ---------- Tablas ---------- */
+.table > thead { background: var(--grafito); color: #E2E8F0; }
+.table-hover > tbody > tr:hover { background: var(--gris-fondo); }
+.progress { height: .55rem; }
+
+/* ---------- Modulo Valuacion (seccion 3.1) ---------- */
+thead .grupo-valuacion { background: #F59E0B; color: #1F2937; }
+tbody .grupo-valuacion, tfoot .grupo-valuacion { background: rgba(245, 158, 11, .10); }
+
+/* ---------- Modulo Costo empresa ---------- */
+thead .grupo-empresa { background: #0891B2; color: #fff; }
+tbody .grupo-empresa, tfoot .grupo-empresa { background: rgba(8, 145, 178, .10); }
+
+/* ---------- Cronograma (Gantt) ---------- */
+.gantt .bar { fill: var(--gris-concreto); }
+.gantt .bar-progress { fill: var(--naranja); }
+.gantt .bar-wrapper.rojo .bar-progress { fill: var(--rojo-alerta); }
+.gantt .bar-wrapper.amarillo .bar-progress { fill: var(--amarillo-atencion); }
+.gantt .bar-wrapper.verde .bar-progress { fill: var(--verde-avance); }
+.gantt .bar-label { fill: #1E293B; }
+.gantt-leyenda .semaforo { margin-right: .3rem; }
+
+/* ---------- Modal de partida (scroll interno) ---------- */
+#modalPartida .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gris-concreto) var(--gris-fondo);
+}
+#modalPartida .modal-body::-webkit-scrollbar { width: 10px; }
+#modalPartida .modal-body::-webkit-scrollbar-track { background: var(--gris-fondo); }
+#modalPartida .modal-body::-webkit-scrollbar-thumb {
+  background: var(--gris-concreto);
+  border-radius: 6px;
+}
+#modalPartida .modal-body::-webkit-scrollbar-thumb:hover { background: var(--grafito-claro); }
+
+/* ---------- Varios ---------- */
+.text-naranja { color: var(--naranja); }
+.seccion-titulo {
+  color: var(--grafito);
+  border-left: 5px solid var(--naranja);
+  padding-left: .6rem;
+  margin: 1.2rem 0;
+}
+a { color: var(--naranja); }
+a:hover { color: var(--naranja-claro); }
+footer.pie {
+  background: var(--grafito);
+  color: #CBD5E1;
+  text-align: center;
+  padding: 1rem;
+  margin-top: 3rem;
+}
